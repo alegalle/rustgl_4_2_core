@@ -1,0 +1,6 @@
+#[link(name = "rustgl_4_2_core", 
+	   vers = "0.1", 
+	   author = "alegalle", 
+	   uuid = "72589cd3-f56b-40c3-b944-db257ed8b36c",
+	   url = "https://github.com/alegalle/rustgl_4_2_core")];
+#[crate_type = "lib"];
