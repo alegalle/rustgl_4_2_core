@@ -68,13 +68,12 @@ fn loadShaders() -> result::t<uint, str>
                     let length = 0;
                     glGetShaderiv(vert_shader, GL_INFO_LOG_LENGTH, ptr::addr_of(length));
                     let mes : [u8] = [];
-                    vec::unsafe::set_len(mes, length as uint);
-                    //glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
-                    //FIXME this segfaults, why?
+                    vec::grow(mes, length as uint, 0u8);
+                    glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
                     glDeleteShader(vert_shader);
                     glDeleteProgram(program);
                     
-                    ret result::err(#fmt("Could not compile vertex shader\n"))
+                    ret result::err(#fmt("Could not compile vertex shader\n%s\n", str::from_bytes(mes)))
                 }
                 
                 glAttachShader(program, vert_shader);
@@ -103,14 +102,13 @@ fn loadShaders() -> result::t<uint, str>
                     let length = 0;
                     glGetShaderiv(frag_shader, GL_INFO_LOG_LENGTH, ptr::addr_of(length));
                     let mes : [u8] = [];
-                    vec::unsafe::set_len(mes, length as uint);
-                    //glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
-                    //FIXME this segfaults, why?
+                    vec::grow(mes, length as uint, 0u8);
+                    glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
                     glDeleteShader(vert_shader);
                     glDeleteShader(frag_shader);
                     glDeleteProgram(program);
                     
-                    ret result::err(#fmt("Could not compile fragment shader\n"))
+                    ret result::err(#fmt("Could not compile fragment shader\n%s\n", str::from_bytes(mes)))
                 }
                 
                 glAttachShader(program, frag_shader);
@@ -129,14 +127,13 @@ fn loadShaders() -> result::t<uint, str>
             let length = 0;
             glGetProgramiv(program, GL_INFO_LOG_LENGTH, ptr::addr_of(length));
             let mes : [u8] = [];
-            vec::unsafe::set_len(mes, length as uint);
-            //glGetProgramInfoLog(program as GLuint, length, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
-            //FIXME this segfaults, why?
+            vec::grow(mes, length as uint, 0u8);
+            glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
             glDeleteShader(vert_shader);
             glDeleteShader(frag_shader);
             glDeleteProgram(program);
             
-            ret result::err(#fmt("Could not link program\n"));
+            ret result::err(#fmt("Could not link program\n%s\n", str::from_bytes(mes)));
         }
     }
     
