@@ -1238,7 +1238,7 @@ const GL_TEXTURE_IMMUTABLE_FORMAT       : GLenum = 0x912Fu;
 /*************************************************************/
 
 #[nolink]
-native mod GL {
+extern mod GL {
     
     /******** A ********/
     

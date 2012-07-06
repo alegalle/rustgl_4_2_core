@@ -19,11 +19,12 @@ import glfw::*;
 import rustgl_4_2_core::*;
 import rustgl_4_2_core::GL::*;
 import tuple::*;
+import result::result;
 
-fn readFile (file : str) -> result::t<[u8], str>
+fn readFile (file : str) -> result<[u8], str>
 {
-    let r = std::io::file_reader(file);
-    let out : [u8] = [];
+    let r = io::file_reader(file);
+    let mut out : [u8] = [];
     
     alt r {
         result::err(e) { 
@@ -40,18 +41,18 @@ fn readFile (file : str) -> result::t<[u8], str>
     }      
 }
 
-fn loadShaders() -> result::t<uint, str>
+fn loadShaders() -> result<uint, str>
 {    
-    let vert_shader = 0u;
-    let frag_shader = 0u;
-    let program = 0u;
+    let mut vert_shader = 0u;
+    let mut frag_shader = 0u;
+    let mut program = 0u;
         
     program = glCreateProgram() as uint;
     
     let vert = readFile("test.vs");
     
     alt vert {
-        result::err(e) {  std::io::print(e); ret result::err(#fmt("%s\n", e)) }
+        result::err(e) {  io::print(e); ret result::err(#fmt("%s\n", e)) }
         result::ok(s) 
         {
             unsafe {                
@@ -67,7 +68,7 @@ fn loadShaders() -> result::t<uint, str>
                 if(result as GLboolean == GL_FALSE) {
                     let length = 0;
                     glGetShaderiv(vert_shader, GL_INFO_LOG_LENGTH, ptr::addr_of(length));
-                    let mes : [u8] = [];
+                    let mut mes : [u8] = [];
                     vec::grow(mes, length as uint, 0u8);
                     glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
                     glDeleteShader(vert_shader);
@@ -85,7 +86,7 @@ fn loadShaders() -> result::t<uint, str>
     let frag = readFile("test.fs");
     
     alt frag {
-        result::err(e) {  std::io::print(e); ret result::err(#fmt("%s\n", e)) }
+        result::err(e) {  io::print(e); ret result::err(#fmt("%s\n", e)) }
         result::ok(s)
         {
             unsafe {
@@ -101,7 +102,7 @@ fn loadShaders() -> result::t<uint, str>
                 if(result as GLboolean == GL_FALSE) {
                     let length = 0;
                     glGetShaderiv(frag_shader, GL_INFO_LOG_LENGTH, ptr::addr_of(length));
-                    let mes : [u8] = [];
+                    let mut mes : [u8] = [];
                     vec::grow(mes, length as uint, 0u8);
                     glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
                     glDeleteShader(vert_shader);
@@ -126,7 +127,7 @@ fn loadShaders() -> result::t<uint, str>
         unsafe {
             let length = 0;
             glGetProgramiv(program, GL_INFO_LOG_LENGTH, ptr::addr_of(length));
-            let mes : [u8] = [];
+            let mut mes : [u8] = [];
             vec::grow(mes, length as uint, 0u8);
             glGetShaderInfoLog(vert_shader as GLuint, length as GLsizei, ptr::addr_of(length) as *GLsizei, vec::unsafe::to_ptr(mes));
             glDeleteShader(vert_shader);
@@ -174,7 +175,7 @@ fn setPerspective (w : int, h : int, fovy : f32, zNear : f32, zFar : f32) -> [f3
     ret vec::from_mut(r);
 }
 
-fn checkSize(w : @mutable int, h : @mutable int) -> bool
+fn checkSize(w : @mut int, h : @mut int) -> bool
 {    
     let w1 = @0;
     let h1 = @0;
@@ -193,7 +194,7 @@ fn checkSize(w : @mutable int, h : @mutable int) -> bool
 fn initGL ()
 {
     glClearColor(0.0f32, 0.6f32, 0.9f32, 1.0f32);
-    glClearDepth (1.0f);									
+    glClearDepth (1.0f as rustgl_4_2_core::GLclampd);									
 	glDepthFunc (GL_LEQUAL);									
 	glEnable (GL_DEPTH_TEST);									
 	glFrontFace(GL_CCW);
@@ -201,9 +202,9 @@ fn initGL ()
 }
 
 impl c_str for str {
-    fn c_str() -> (@[u8], *u8)
+    fn c_str() -> (@~[u8], *u8)
     {
-        let bytes = str::bytes(self);
+        let mut bytes = str::bytes(self);
         bytes += [0u8];
         let pbytes = @bytes;
         unsafe { ret (pbytes, vec::unsafe::to_ptr(*pbytes)); }
@@ -212,7 +213,7 @@ impl c_str for str {
 
 fn main ()
 {
-    /**** Init window ****/
+    /* Init window */
 	if (glfwInit() == 0)
 	{
 		fail("glfwInit() failed\n");
@@ -222,11 +223,10 @@ fn main ()
 	{
 		fail("glfwOpenWindow() failed\n");
 	}
-    /****/
     
     
 	
-    /**** Get OpenGL version info ****/
+    /* Get OpenGL version info */
 	let major : @int = @0;
 	let minor : @int = @0;
 	let rev   : @int = @0;
@@ -234,30 +234,27 @@ fn main ()
 	
 	let title = #fmt("Opengl version - %d.%d rev %d", *major, *minor, *rev);
 	glfwSetWindowTitle(title);
-    /****/
     
     
     
-    /**** Load shaders ****/
+    /* Load shaders */
     let rprogram = loadShaders();
     let program : uint;
     
     alt rprogram {
-        result::err(e) {  std::io::print(e); glfwTerminate(); ret }
+        result::err(e) {  io::print(e); glfwTerminate(); ret }
         result::ok(s) { program = s; glUseProgram(program); }
     }
-    /****/
     
     
-    /**** Set Shader Uniforms ****/
-    let proj : [f32] = [];
+    /* Set Shader Uniforms */
+    let mut proj : [f32] = [];
     let uProj = glGetUniformLocation( program, second("projectionMatrix".c_str()) ) as uint;
     let uVert = glGetAttribLocation ( program, second("vertex".c_str()) ) as uint;
     let uCol  = glGetAttribLocation ( program, second("colour".c_str()) ) as uint;
-    /****/
     
     
-    /**** Make a vbo ****/
+    /* Make a vbo */
     let tris = [-2.0f32, -1.0f32, -4.0f32, 1.0f32, 0.0f32, 0.0f32,
                  0.0f32, -1.0f32, -4.0f32, 1.0f32, 0.0f32, 0.0f32,
                 -1.0f32,  1.0f32, -4.0f32, 1.0f32, 0.0f32, 0.0f32,
@@ -275,34 +272,31 @@ fn main ()
         glVertexAttribPointer(uCol, 3, GL_FLOAT, GL_FALSE, (sys::size_of::<f32>()*6u) as int, (sys::size_of::<f32>()*3u) as *uint);
         glEnableVertexAttribArray(uCol);
     }
-    /****/
 
 
-    /**** Setup opengl ****/
+    /* Setup opengl */
     initGL();
-    /****/
     
     
-    /**** Setup and run loop ****/
-    let w = @mutable 0;
-    let h = @mutable 0;     
+    /* Setup and run loop */
+    let w = @mut 0;
+    let h = @mut 0;     
 
-    let done = false; 
+    let mut done = false; 
     
-    let then = std::time::precise_time_s();
-    let fps = 0;
+    let mut then = std::time::precise_time_s();
+    let mut fps = 0;
     
 	while (!done)
 	{
-        /**** Check for exit conditions ****/
+        /* Check for exit conditions */
 		if (glfwGetKey(GLFW_KEY_ESC) == GLFW_PRESS  || !glfwGetWindowParam(GLFW_OPENED) as bool)
 		{
             done = true;
 		}
-        /****/
         
         
-        /**** Check time ****/
+        /* Check time */
         let now = std::time::precise_time_s();
         if ( now - then >= 0.1 )
         {
@@ -312,31 +306,27 @@ fn main ()
             then = now;
         }
         fps += 1;
-        /****/
         
         
-        /**** Check for changes in window size ****/
+        /* Check for changes in window size */
         if (checkSize(w,h))
         {
             proj = setPerspective(*w, *h, 40.0f32, 1.0f32, 100.0f32);
             glViewport(0, 0, *w, *h);  
             unsafe { glUniformMatrix4fv(uProj as int, 1, GL_FALSE, vec::unsafe::to_ptr(proj)); }
         }
-        /****/
         
         
         
-        /**** Render ****/
+        /* Render */
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
         
         glDrawArrays(GL_TRIANGLES, 0, 6 ); 
         
 		glfwSwapBuffers();
-        /****/
         
         
     }  
-    /****/
     
     
     glDeleteBuffers(1, ptr::addr_of(buf));
